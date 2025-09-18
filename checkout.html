@@ -368,19 +368,17 @@
             })
             .then(response => {
                 if (response.ok) {
-                    alert('Order placed successfully! Your Order ID is ' + orderId);
                     // Clear cart and coupon after successful order
                     localStorage.removeItem('cart');
                     localStorage.removeItem('appliedCoupon');
                     // Redirect to confirmation page
                     window.location.href = 'order-confirmation.html';
                 } else {
-                    alert('Error placing order. Please try again.');
+                    console.error('Error placing order.');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
             });
         });
     </script>
