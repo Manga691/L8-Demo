@@ -307,6 +307,13 @@
             right: 5px;
         }
 
+        .popup-content .error-message {
+            color: #ff4444;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            display: none;
+        }
+
         .popup-content h3 {
             font-size: 1.5rem;
             margin-bottom: 10px;
@@ -598,9 +605,6 @@
                     </div>
                 </div>
                 <div class="carousel-nav">
-                    <div class="carousel-dot active"></div>
-                    <div class="carousel-dot"></div>
-                    <div class="carousel-dot"></div>
                 </div>
             </div>
         </div>
@@ -614,6 +618,7 @@
                 <button class="carousel-arrow left" id="popup-left-arrow">&larr;</button>
                 <button class="carousel-arrow right" id="popup-right-arrow">&rarr;</button>
             </div>
+            <p class="error-message" id="error-message"></p>
             <h3 id="popup-name"></h3>
             <p class="description" id="popup-description"></p>
             <div class="options">
@@ -651,25 +656,39 @@
         // Product carousel functionality (for the bestsellers section)
         const productSlides = document.querySelectorAll('.product-slide');
         const carouselInner = document.querySelector('.carousel-inner');
-        const productDots = document.querySelectorAll('.carousel-dot');
+        const carouselNav = document.querySelector('.carousel-nav');
+        const mediaQuery = window.matchMedia("(max-width: 768px)");
+        let slidesPerView = mediaQuery.matches ? 1 : 2;
         let currentProductSlide = 0;
         const totalSlides = productSlides.length;
-        const slidesPerView = 2;
         const totalDots = Math.ceil(totalSlides / slidesPerView);
         let productSlideInterval = setInterval(nextProductSlide, 5000);
 
+        // Create dots dynamically
+        carouselNav.innerHTML = '';
+        for (let i = 0; i < totalDots; i++) {
+            const dot = document.createElement('div');
+            dot.classList.add('carousel-dot');
+            if (i === 0) dot.classList.add('active');
+            dot.addEventListener('click', () => {
+                clearInterval(productSlideInterval);
+                goToProductSlide(i);
+                productSlideInterval = setInterval(nextProductSlide, 5000);
+            });
+            carouselNav.appendChild(dot);
+        }
+        const productDots = document.querySelectorAll('.carousel-dot');
+
         function updateCarousel() {
-            const offset = currentProductSlide * (100 / slidesPerView);
+            const slideWidthPercent = 100 / slidesPerView;
+            const offset = currentProductSlide * slideWidthPercent;
             carouselInner.style.transform = `translateX(-${offset}%)`;
             productDots.forEach(dot => dot.classList.remove('active'));
-            productDots[currentProductSlide / slidesPerView].classList.add('active');
+            productDots[Math.floor(currentProductSlide / slidesPerView)].classList.add('active');
         }
 
         function nextProductSlide() {
             currentProductSlide = (currentProductSlide + slidesPerView) % totalSlides;
-            if (currentProductSlide >= totalSlides - slidesPerView + 1) {
-                currentProductSlide = 0;
-            }
             updateCarousel();
         }
 
@@ -681,12 +700,29 @@
             updateCarousel();
         }
 
-        productDots.forEach((dot, index) => {
-            dot.addEventListener('click', () => {
-                clearInterval(productSlideInterval);
-                goToProductSlide(index);
-                productSlideInterval = setInterval(nextProductSlide, 5000);
-            });
+        // Add swipe for product carousel
+        const productCarousel = document.querySelector('.product-carousel');
+        let startXProduct, endXProduct;
+        productCarousel.addEventListener('touchstart', (e) => {
+            startXProduct = e.touches[0].clientX;
+        });
+        productCarousel.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        });
+        productCarousel.addEventListener('touchend', (e) => {
+            endXProduct = e.changedTouches[0].clientX;
+            const deltaX = endXProduct - startXProduct;
+            const threshold = 50;
+            clearInterval(productSlideInterval);
+            if (deltaX > threshold) {
+                // swipe right, previous
+                currentProductSlide = (currentProductSlide - slidesPerView + totalSlides) % totalSlides;
+            } else if (deltaX < -threshold) {
+                // swipe left, next
+                currentProductSlide = (currentProductSlide + slidesPerView) % totalSlides;
+            }
+            updateCarousel();
+            productSlideInterval = setInterval(nextProductSlide, 5000);
         });
 
         updateCarousel();
@@ -698,7 +734,9 @@
             const images = card.querySelectorAll('.product-image');
             const leftArrow = card.querySelector('.carousel-arrow.left');
             const rightArrow = card.querySelector('.carousel-arrow.right');
+            const imageCarousel = card.querySelector('.product-image-carousel');
             let currentImageIndex = 0;
+            let startXImage, endXImage;
 
             function updateImageCarousel() {
                 imageInner.style.transform = `translateX(-${currentImageIndex * 100}%)`;
@@ -711,6 +749,27 @@
 
             rightArrow.addEventListener('click', () => {
                 currentImageIndex = (currentImageIndex + 1) % images.length;
+                updateImageCarousel();
+            });
+
+            // Add swipe for product image carousel
+            imageCarousel.addEventListener('touchstart', (e) => {
+                startXImage = e.touches[0].clientX;
+            });
+            imageCarousel.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+            });
+            imageCarousel.addEventListener('touchend', (e) => {
+                endXImage = e.changedTouches[0].clientX;
+                const deltaX = endXImage - startXImage;
+                const threshold = 50;
+                if (deltaX > threshold) {
+                    // swipe right, previous
+                    currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+                } else if (deltaX < -threshold) {
+                    // swipe left, next
+                    currentImageIndex = (currentImageIndex + 1) % images.length;
+                }
                 updateImageCarousel();
             });
 
@@ -729,8 +788,11 @@
         const closePopup = document.querySelector('.close-popup');
         const popupLeftArrow = document.getElementById('popup-left-arrow');
         const popupRightArrow = document.getElementById('popup-right-arrow');
+        const errorMessage = document.getElementById('error-message');
+        const popupImageCarousel = document.querySelector('.popup-image-carousel');
         let popupImages = [];
         let popupCurrentImageIndex = 0;
+        let startXPopup, endXPopup;
 
         productCards.forEach(card => {
             card.addEventListener('click', () => {
@@ -756,6 +818,7 @@
                 popupPrice.textContent = `$${price}`;
                 popupSize.value = '';
                 popupQuantity.value = '1';
+                errorMessage.style.display = 'none';
                 updatePopupCarousel();
                 popup.style.display = 'flex';
             });
@@ -775,6 +838,27 @@
             updatePopupCarousel();
         });
 
+        // Add swipe for popup image carousel
+        popupImageCarousel.addEventListener('touchstart', (e) => {
+            startXPopup = e.touches[0].clientX;
+        });
+        popupImageCarousel.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        });
+        popupImageCarousel.addEventListener('touchend', (e) => {
+            endXPopup = e.changedTouches[0].clientX;
+            const deltaX = endXPopup - startXPopup;
+            const threshold = 50;
+            if (deltaX > threshold) {
+                // swipe right, previous
+                popupCurrentImageIndex = (popupCurrentImageIndex - 1 + popupImages.length) % popupImages.length;
+            } else if (deltaX < -threshold) {
+                // swipe left, next
+                popupCurrentImageIndex = (popupCurrentImageIndex + 1) % popupImages.length;
+            }
+            updatePopupCarousel();
+        });
+
         closePopup.addEventListener('click', () => {
             popup.style.display = 'none';
         });
@@ -789,12 +873,16 @@
             const size = popupSize.value;
             const quantity = parseInt(popupQuantity.value);
 
+            errorMessage.style.display = 'none';
+
             if (!size) {
-                alert('Please select a size.');
+                errorMessage.textContent = 'Please select a size.';
+                errorMessage.style.display = 'block';
                 return;
             }
             if (quantity < 1) {
-                alert('Please select a valid quantity.');
+                errorMessage.textContent = 'Please select a valid quantity.';
+                errorMessage.style.display = 'block';
                 return;
             }
 
@@ -810,7 +898,6 @@
                 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
                 cart.push(item);
                 localStorage.setItem('cart', JSON.stringify(cart));
-                alert('Item added to cart!');
                 popup.style.display = 'none';
                 window.location.href = 'cart.html';
             } catch (error) {
