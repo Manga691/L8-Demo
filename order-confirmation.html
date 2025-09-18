@@ -224,6 +224,7 @@
             <div class="confirmation-info">
                 <p id="order-id"></p>
                 <p id="customer-name"></p>
+                <p id="email"></p>
                 <p id="phone1"></p>
                 <p id="phone2"></p>
                 <p id="city"></p>
@@ -263,6 +264,7 @@
 
             document.getElementById('order-id').textContent = `Order ID: ${order.orderId || 'N/A'}`;
             document.getElementById('customer-name').textContent = `Customer Name: ${order.firstName || 'N/A'} ${order.lastName || 'N/A'}`;
+            document.getElementById('email').textContent = `Email: ${order.email || 'N/A'}`;
             document.getElementById('phone1').textContent = `First Phone Number: ${order.phone1 || 'N/A'}`;
             document.getElementById('phone2').textContent = `Second Phone Number: ${order.phone2 || 'N/A'}`;
             document.getElementById('city').textContent = `City: ${order.city || 'N/A'}`;
