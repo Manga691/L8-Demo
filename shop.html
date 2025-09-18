@@ -511,6 +511,7 @@
                 <button class="carousel-arrow left" id="popup-left-arrow">&larr;</button>
                 <button class="carousel-arrow right" id="popup-right-arrow">&rarr;</button>
             </div>
+            <p id="popup-error" style="color: red; display: none; text-align: center; margin-bottom: 10px;"></p>
             <h3 id="popup-name"></h3>
             <p class="description" id="popup-description"></p>
             <div class="options">
@@ -568,6 +569,27 @@
                 updateImageCarousel();
             });
 
+            // Add swipe functionality for product card
+            const carousel = card.querySelector('.product-image-carousel');
+            let touchstartX = 0;
+            let touchendX = 0;
+
+            carousel.addEventListener('touchstart', event => {
+                touchstartX = event.changedTouches[0].screenX;
+            });
+
+            carousel.addEventListener('touchend', event => {
+                touchendX = event.changedTouches[0].screenX;
+                if (touchendX < touchstartX - 50) {
+                    currentImageIndex = (currentImageIndex + 1) % images.length;
+                    updateImageCarousel();
+                }
+                if (touchendX > touchstartX + 50) {
+                    currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+                    updateImageCarousel();
+                }
+            });
+
             updateImageCarousel();
         });
 
@@ -583,6 +605,7 @@
         const closePopup = document.querySelector('.close-popup');
         const popupLeftArrow = document.getElementById('popup-left-arrow');
         const popupRightArrow = document.getElementById('popup-right-arrow');
+        const popupError = document.getElementById('popup-error');
         let popupImages = [];
         let popupCurrentImageIndex = 0;
 
@@ -610,6 +633,8 @@
                 popupPrice.textContent = `$${price}`;
                 popupSize.value = '';
                 popupQuantity.value = '1';
+                popupError.style.display = 'none';
+                popupError.textContent = '';
                 updatePopupCarousel();
                 popup.style.display = 'flex';
             });
@@ -629,6 +654,27 @@
             updatePopupCarousel();
         });
 
+        // Add swipe functionality for popup
+        const popupCarousel = document.querySelector('.popup-image-carousel');
+        let popupTouchstartX = 0;
+        let popupTouchendX = 0;
+
+        popupCarousel.addEventListener('touchstart', event => {
+            popupTouchstartX = event.changedTouches[0].screenX;
+        });
+
+        popupCarousel.addEventListener('touchend', event => {
+            popupTouchendX = event.changedTouches[0].screenX;
+            if (popupTouchendX < popupTouchstartX - 50) {
+                popupCurrentImageIndex = (popupCurrentImageIndex + 1) % popupImages.length;
+                updatePopupCarousel();
+            }
+            if (popupTouchendX > popupTouchstartX + 50) {
+                popupCurrentImageIndex = (popupCurrentImageIndex - 1 + popupImages.length) % popupImages.length;
+                updatePopupCarousel();
+            }
+        });
+
         closePopup.addEventListener('click', () => {
             popup.style.display = 'none';
         });
@@ -641,14 +687,19 @@
 
         addToCartButton.addEventListener('click', () => {
             const size = popupSize.value;
-            const quantity = parseInt(popupQuantity.value);
+            const quantity = parseInt(popupQuantity.value, 10);
+
+            popupError.style.display = 'none';
+            popupError.textContent = '';
 
             if (!size) {
-                alert('Please select a size.');
+                popupError.textContent = 'Please select a size.';
+                popupError.style.display = 'block';
                 return;
             }
-            if (quantity < 1) {
-                alert('Please select a valid quantity.');
+            if (isNaN(quantity) || quantity < 1) {
+                popupError.textContent = 'Please select a valid quantity.';
+                popupError.style.display = 'block';
                 return;
             }
 
@@ -664,12 +715,12 @@
                 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
                 cart.push(item);
                 localStorage.setItem('cart', JSON.stringify(cart));
-                alert('Item added to cart!');
                 popup.style.display = 'none';
                 window.location.href = 'cart.html';
             } catch (error) {
                 console.error('Error saving to localStorage:', error);
-                alert('An error occurred while adding to cart. Please try again.');
+                popupError.textContent = 'An error occurred while adding to cart. Please try again.';
+                popupError.style.display = 'block';
             }
         });
     </script>
